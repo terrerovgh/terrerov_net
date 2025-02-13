@@ -10,7 +10,8 @@ This project sets up a complete Docker-based network infrastructure with DNS, re
 
 ## Services Included
 
-- **Bind9**: DNS server for domain name resolution
+- **Bind9**: DNS server for internal domain name resolution
+- **Pi-hole**: DNS server and ad-blocker for external access
 - **Traefik**: Reverse proxy and SSL certificate manager
 - **Nginx**: Web server for hosting static content
 - **PostgreSQL**: Database server
@@ -64,6 +65,63 @@ When connected through Twingate VPN, services are automatically accessible at:
 - Traefik Dashboard: https://traefik.terrerov.com
 - Web Server: https://www.terrerov.com
 - Database: db.terrerov.com:5432
+- Pi-hole Admin Interface: https://pihole.terrerov.com
+
+#### Configuring Twingate with Pi-hole
+
+1. Access your Twingate Admin Console
+2. Navigate to the Network Settings
+3. Set the Primary DNS to the Pi-hole container's IP address within the terrerov_net network
+4. All VPN clients will now use Pi-hole for DNS resolution
+
+### DNS Resolution Flow
+
+The network implements a dual-DNS server setup with Pi-hole as the primary external DNS server:
+
+1. **External Access (VPN Clients)**:
+   - Pi-hole handles all DNS queries (172.20.0.53)
+   - Custom DNS records for terrerov.com managed through /pihole/custom.list
+   - Uses Cloudflare DNS (1.1.1.1, 1.0.0.1) for external domains
+
+2. **Internal Access (Docker Containers)**:
+   - Bind9 handles internal DNS resolution
+   - Manages service discovery within terrerov_net
+   - Provides authoritative DNS for the internal network
+
+### Managing Custom DNS Records
+
+Pi-hole is configured to resolve terrerov.com and its subdomains using custom DNS records. To add or modify DNS records:
+
+1. Edit the `/pihole/custom.list` file on the host machine
+2. Format: `<ip-address> <domain>`
+3. Use ${HOST_IP} variable for the Docker host's IP address
+4. Example entries:
+   ```
+   ${HOST_IP} terrerov.com
+   ${HOST_IP} *.terrerov.com
+   ${HOST_IP} service.terrerov.com
+   ```
+5. Pi-hole will automatically detect changes and update its DNS records
+
+### SSL Security Configuration
+
+Traefik is configured with enhanced SSL security features:
+
+1. **HSTS (HTTP Strict Transport Security)**:
+   - Enabled with a 1-year duration (31536000 seconds)
+   - Includes subdomains
+   - Preload list enabled
+
+2. **TLS Configuration**:
+   - Minimum TLS version: 1.2
+   - Modern cipher suites only:
+     - ECDHE with AES-GCM
+     - ECDHE with ChaCha20-Poly1305
+
+3. **Certificate Management**:
+   - Automatic SSL certificates via Let's Encrypt
+   - DNS challenge through Cloudflare
+   - Automatic certificate renewal
 
 ### Local Network Access
 

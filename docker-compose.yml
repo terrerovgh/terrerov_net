@@ -11,8 +11,40 @@ volumes:
   postgres_data:
   bind_config:
   traefik_certs:
+  pihole_config:
+  pihole_dnsmasq:
+  pihole_custom_dns:
 
 services:
+  pihole:
+    image: pihole/pihole:latest
+    container_name: pihole
+    networks:
+      terrerov_net:
+        ipv4_address: 172.20.0.53
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "8080:80/tcp"
+    environment:
+      TZ: 'UTC'
+      WEBPASSWORD: ${ADMIN_PASSWORD}
+      DNS1: '1.1.1.1'
+      DNS2: '1.0.0.1'
+      DNSMASQ_LISTENING: 'all'
+      VIRTUAL_HOST: 'pihole.terrerov.com'
+    volumes:
+      - pihole_config:/etc/pihole
+      - pihole_dnsmasq:/etc/dnsmasq.d
+      - ./pihole/custom.list:/etc/pihole/custom.list:rw
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pihole.rule=Host(`pihole.terrerov.com`)"
+      - "traefik.http.routers.pihole.entrypoints=websecure"
+      - "traefik.http.routers.pihole.certResolver=cloudflare"
+      - "traefik.http.services.pihole.loadbalancer.server.port=80"
+    restart: unless-stopped
+
   bind9:
     image: ubuntu/bind9:latest
     container_name: bind9
@@ -53,12 +85,12 @@ services:
     restart: unless-stopped
 
   nginx:
-    image: nginx:alpine
+    image: nginx:stable
     container_name: nginx
     networks:
       - terrerov_net
     ports:
-      - "8080:80"
+      - "8081:80"
     volumes:
       - ./nginx/html:/usr/share/nginx/html
       - ./nginx/conf.d:/etc/nginx/conf.d
@@ -71,7 +103,7 @@ services:
     restart: unless-stopped
 
   postgres:
-    image: postgres:15-alpine
+    image: postgres:15
     container_name: postgres
     networks:
       - terrerov_net
@@ -97,6 +129,37 @@ services:
       - ZONE=terrerov.com
     volumes:
       - ./cloudflare-ddns:/config
+    restart: unless-stopped
+
+  pihole:
+    image: pihole/pihole:latest
+    container_name: pihole
+    networks:
+      - terrerov_net
+    ports:
+      - "8053:53/tcp"
+      - "8053:53/udp"
+      - "8082:80"
+      - "8444:443"
+    environment:
+      - TZ=UTC
+      - WEBPASSWORD=${PIHOLE_PASSWORD}
+      - DNS1=1.1.1.1
+      - DNS2=1.0.0.1
+      - DNSMASQ_LISTENING=all
+      - VIRTUAL_HOST=pihole.terrerov.com
+    volumes:
+      - pihole_config:/etc/pihole
+      - pihole_dnsmasq:/etc/dnsmasq.d
+    dns:
+      - 127.0.0.1
+      - 1.1.1.1
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pihole.rule=Host(`pihole.terrerov.com`)"
+      - "traefik.http.routers.pihole.entrypoints=websecure"
+      - "traefik.http.routers.pihole.certResolver=cloudflare"
+      - "traefik.http.services.pihole.loadbalancer.server.port=80"
     restart: unless-stopped
 
   netmon:
