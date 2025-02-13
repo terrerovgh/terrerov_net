@@ -38,7 +38,7 @@ ${LAN_NETWORK}                        |             |
 
 ## Features
 
-- **Traefik Reverse Proxy**: Configured using best practices from Christian Lempa's boilerplates
+- **Traefik Reverse Proxy**: 
   - Handles both LAN (192.168.0.0/25) and Docker internal network (terrerov_net) traffic
   - Automatic SSL certificate management via Cloudflare DNS challenge
   - Enhanced security with custom middleware configurations
