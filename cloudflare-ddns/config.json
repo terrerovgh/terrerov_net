@@ -1,0 +1,28 @@
+{
+  "cloudflare": [
+    {
+      "authentication": {
+        "api_token": "${CF_API_TOKEN}"
+      },
+      "zone_id": "auto",
+      "subdomains": [
+        {
+          "name": "www",
+          "proxied": true
+        },
+        {
+          "name": "traefik",
+          "proxied": true
+        },
+        {
+          "name": "db",
+          "proxied": true
+        }
+      ]
+    }
+  ],
+  "a": true,
+  "aaaa": false,
+  "purgeUnknownRecords": false,
+  "ttl": 300
+}

@@ -1,0 +1,44 @@
+[global]
+  checkNewVersion = true
+  sendAnonymousUsage = false
+
+[log]
+  level = "INFO"
+
+[entryPoints]
+  [entryPoints.web]
+    address = ":80"
+    [entryPoints.web.http.redirections.entryPoint]
+      to = "websecure"
+      scheme = "https"
+
+  [entryPoints.websecure]
+    address = ":443"
+
+  [entryPoints.dns]
+    address = ":53/udp"
+
+  [entryPoints.dnstcp]
+    address = ":53"
+
+[api]
+  dashboard = true
+
+[providers]
+  [providers.docker]
+    endpoint = "unix:///var/run/docker.sock"
+    exposedByDefault = false
+    network = "terrerov_net"
+    watch = true
+
+  [providers.file]
+    directory = "/etc/traefik/dynamic"
+    watch = true
+
+[certificatesResolvers.cloudflare]
+  [certificatesResolvers.cloudflare.acme]
+    email = "${EMAIL}"
+    storage = "/etc/traefik/acme/acme.json"
+    [certificatesResolvers.cloudflare.acme.dnsChallenge]
+      provider = "cloudflare"
+      resolvers = ["1.1.1.1:53", "1.0.0.1:53"]

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor de Red - Terrerov</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">Monitor de Red - Terrerov</span>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Speed Test Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Pruebas de Velocidad</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="speedTestChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Network Scans Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Escaneos de Red</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table" id="networkScansTable">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Tipo</th>
+                                <th>Objetivo</th>
+                                <th>Resultado</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Logs Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Registro de Errores</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table" id="errorLogsTable">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Tipo</th>
+                                <th>Descripción</th>
+                                <th>Análisis IA</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Function to format dates
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleString('es-ES');
+        }
+
+        // Function to update speed test chart
+        async function updateSpeedTestChart() {
+            const response = await fetch('/api/speed-tests');
+            const data = await response.json();
+
+            const timestamps = data.map(test => formatDate(test.timestamp));
+            const downloadSpeeds = data.map(test => test.download_speed);
+            const uploadSpeeds = data.map(test => test.upload_speed);
+
+            new Chart(document.getElementById('speedTestChart'), {
+                type: 'line',
+                data: {
+                    labels: timestamps,
+                    datasets: [
+                        {
+                            label: 'Velocidad de Descarga (Mbps)',
+                            data: downloadSpeeds,
+                            borderColor: 'rgb(75, 192, 192)',
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Velocidad de Subida (Mbps)',
+                            data: uploadSpeeds,
+                            borderColor: 'rgb(255, 99, 132)',
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Function to update network scans table
+        async function updateNetworkScans() {
+            const response = await fetch('/api/network-scans');
+            const data = await response.json();
+            const tbody = document.querySelector('#networkScansTable tbody');
+            tbody.innerHTML = data.map(scan => `
+                <tr>
+                    <td>${formatDate(scan.timestamp)}</td>
+                    <td>${scan.scan_type}</td>
+                    <td>${scan.target}</td>
+                    <td><pre class="mb-0" style="max-height: 100px; overflow-y: auto">${scan.result}</pre></td>
+                </tr>
+            `).join('');
+        }
+
+        // Function to update error logs table
+        async function updateErrorLogs() {
+            const response = await fetch('/api/errors');
+            const data = await response.json();
+            const tbody = document.querySelector('#errorLogsTable tbody');
+            tbody.innerHTML = data.map(error => `
+                <tr>
+                    <td>${formatDate(error.timestamp)}</td>
+                    <td>${error.error_type}</td>
+                    <td>${error.description}</td>
+                    <td>${error.ai_analysis}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Initial load
+        updateSpeedTestChart();
+        updateNetworkScans();
+        updateErrorLogs();
+
+        // Refresh data every 5 minutes
+        setInterval(() => {
+            updateSpeedTestChart();
+            updateNetworkScans();
+            updateErrorLogs();
+        }, 5 * 60 * 1000);
+    </script>
+</body>
+</html>

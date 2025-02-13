@@ -1,0 +1,15 @@
+$TTL 86400
+@       IN      SOA     terrerov.com. admin.terrerov.com. (
+                        2024011501  ; Serial
+                        3600        ; Refresh
+                        1800        ; Retry
+                        604800      ; Expire
+                        86400 )     ; Minimum TTL
+
+@       IN      NS      ns.terrerov.com.
+
+; Reverse records for our services
+2.0     IN      PTR     ns.terrerov.com.
+2.0     IN      PTR     traefik.terrerov.com.
+3.0     IN      PTR     www.terrerov.com.
+4.0     IN      PTR     db.terrerov.com.
