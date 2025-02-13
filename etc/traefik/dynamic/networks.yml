@@ -1,0 +1,29 @@
+http:
+  routers:
+    lan-router:
+      entryPoints:
+        - "websecure"
+      rule: "HostRegexp(`{host:.+}`) && ClientIP(`192.168.0.0/25`)"
+      service: "noop@internal"
+      priority: 1
+      middlewares:
+        - "security@file"
+      tls:
+        certResolver: "cloudflare"
+
+    internal-router:
+      entryPoints:
+        - "websecure"
+      rule: "HostRegexp(`{host:.+}`) && ClientIP(`172.20.0.0/16`)"
+      service: "noop@internal"
+      priority: 1
+      middlewares:
+        - "security@file"
+      tls:
+        certResolver: "cloudflare"
+
+  services:
+    noop:
+      loadBalancer:
+        servers:
+          - url: "http://localhost"

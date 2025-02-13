@@ -9,7 +9,6 @@ networks:
 
 volumes:
   postgres_data:
-  bind_config:
   traefik_certs:
   pihole_config:
   pihole_dnsmasq:
@@ -23,8 +22,6 @@ services:
       terrerov_net:
         ipv4_address: 172.20.0.53
     ports:
-      - "53:53/tcp"
-      - "53:53/udp"
       - "8080:80/tcp"
     environment:
       TZ: 'UTC'
@@ -41,22 +38,9 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.pihole.rule=Host(`pihole.terrerov.com`)"
       - "traefik.http.routers.pihole.entrypoints=websecure"
-      - "traefik.http.routers.pihole.certResolver=cloudflare"
+      - "traefik.http.routers.pihole.tls.certresolver=cloudflare"
       - "traefik.http.services.pihole.loadbalancer.server.port=80"
-    restart: unless-stopped
-
-  bind9:
-    image: ubuntu/bind9:latest
-    container_name: bind9
-    network_mode: host
-    ports:
-      - "53:53/tcp"
-      - "53:53/udp"
-    volumes:
-      - ./bind:/etc/bind
-      - bind_config:/var/cache/bind
-    environment:
-      - ROOT_PASSWORD=${ROOT_PASSWORD}
+      - "traefik.http.routers.pihole.middlewares=secure-headers@file"
     restart: unless-stopped
 
   traefik:
@@ -71,16 +55,19 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik.toml:/etc/traefik/traefik.toml:ro
       - traefik_certs:/etc/traefik/acme
+      - ./etc/traefik/dynamic:/etc/traefik/dynamic:ro
     environment:
       - CF_API_TOKEN=${CF_API_TOKEN}
+      - CLOUDFLARE_DNS_API_TOKEN=${CF_API_TOKEN}
+      - CLOUDFLARE_EMAIL=${EMAIL}
       - EMAIL=${EMAIL}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.dashboard.rule=Host(`traefik.terrerov.com`)"
       - "traefik.http.routers.dashboard.service=api@internal"
       - "traefik.http.routers.dashboard.entrypoints=websecure"
-      - "traefik.http.routers.dashboard.middlewares=auth"
-      - "traefik.http.routers.dashboard.certResolver=cloudflare"
+      - "traefik.http.routers.dashboard.middlewares=auth,secure-headers@file"
+      - "traefik.http.routers.dashboard.tls.certresolver=cloudflare"
       - "traefik.http.middlewares.auth.basicauth.users=admin:${TRAEFIK_PASSWORD}"
     restart: unless-stopped
 
@@ -98,85 +85,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.nginx.rule=Host(`www.terrerov.com`)"
       - "traefik.http.routers.nginx.entrypoints=websecure"
-      - "traefik.http.routers.nginx.certResolver=cloudflare"
+      - "traefik.http.routers.nginx.tls.certresolver=cloudflare"
       - "traefik.http.services.nginx.loadbalancer.server.port=80"
-    restart: unless-stopped
-
-  postgres:
-    image: postgres:15
-    container_name: postgres
-    networks:
-      - terrerov_net
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.postgres.rule=Host(`db.terrerov.com`)"
-      - "traefik.http.routers.postgres.entrypoints=websecure"
-      - "traefik.http.routers.postgres.certResolver=cloudflare"
-      - "traefik.http.services.postgres.loadbalancer.server.port=5432"
-    restart: unless-stopped
-
-  cloudflare-ddns:
-    image: oznu/cloudflare-ddns:latest
-    container_name: cloudflare-ddns
-    environment:
-      - CF_API_TOKEN=${CF_API_TOKEN}
-      - ZONE=terrerov.com
-    volumes:
-      - ./cloudflare-ddns:/config
-    restart: unless-stopped
-
-  pihole:
-    image: pihole/pihole:latest
-    container_name: pihole
-    networks:
-      - terrerov_net
-    ports:
-      - "8053:53/tcp"
-      - "8053:53/udp"
-      - "8082:80"
-      - "8444:443"
-    environment:
-      - TZ=UTC
-      - WEBPASSWORD=${PIHOLE_PASSWORD}
-      - DNS1=1.1.1.1
-      - DNS2=1.0.0.1
-      - DNSMASQ_LISTENING=all
-      - VIRTUAL_HOST=pihole.terrerov.com
-    volumes:
-      - pihole_config:/etc/pihole
-      - pihole_dnsmasq:/etc/dnsmasq.d
-    dns:
-      - 127.0.0.1
-      - 1.1.1.1
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.pihole.rule=Host(`pihole.terrerov.com`)"
-      - "traefik.http.routers.pihole.entrypoints=websecure"
-      - "traefik.http.routers.pihole.certResolver=cloudflare"
-      - "traefik.http.services.pihole.loadbalancer.server.port=80"
-    restart: unless-stopped
-
-  netmon:
-    build:
-      context: ./netmon
-      dockerfile: Dockerfile
-    container_name: netmon
-    networks:
-      - terrerov_net
-    volumes:
-      - ./netmon:/app
-    environment:
-      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.netmon.rule=Host(`monitor.terrerov.com`)"
-      - "traefik.http.routers.netmon.entrypoints=websecure"
-      - "traefik.http.routers.netmon.tls.certresolver=cloudflare"
-      - "traefik.http.services.netmon.loadbalancer.server.port=8000"
+      - "traefik.http.routers.nginx.middlewares=secure-headers@file"
     restart: unless-stopped

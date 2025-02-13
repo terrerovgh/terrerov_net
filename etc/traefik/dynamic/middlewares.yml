@@ -1,0 +1,28 @@
+http:
+  middlewares:
+    security-headers:
+      headers:
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        forceSTSHeader: true
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: "same-origin"
+        permissionsPolicy: "camera=(), microphone=(), geolocation=(), payment=()"
+        customFrameOptionsValue: "SAMEORIGIN"
+
+    compress:
+      compress: {}
+
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 50
+
+    secure-headers:
+      chain:
+        middlewares:
+          - security-headers
+          - compress
+          - rate-limit

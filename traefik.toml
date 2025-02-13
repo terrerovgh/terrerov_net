@@ -1,16 +1,18 @@
 [global]
-  checkNewVersion = true
-  sendAnonymousUsage = false
+checkNewVersion = false
+sendAnonymousUsage = false
 
 [log]
-  level = "INFO"
+level = "INFO"
 
 [entryPoints]
   [entryPoints.web]
     address = ":80"
-    [entryPoints.web.http.redirections.entryPoint]
-      to = "websecure"
-      scheme = "https"
+    [entryPoints.web.http]
+      [entryPoints.web.http.redirections]
+        [entryPoints.web.http.redirections.entryPoint]
+          to = "websecure"
+          scheme = "https"
 
   [entryPoints.websecure]
     address = ":443"
@@ -22,7 +24,7 @@
     address = ":53"
 
 [api]
-  dashboard = true
+dashboard = true
 
 [providers]
   [providers.docker]
@@ -35,10 +37,30 @@
     directory = "/etc/traefik/dynamic"
     watch = true
 
-[certificatesResolvers.cloudflare]
-  [certificatesResolvers.cloudflare.acme]
-    email = "${EMAIL}"
-    storage = "/etc/traefik/acme/acme.json"
-    [certificatesResolvers.cloudflare.acme.dnsChallenge]
-      provider = "cloudflare"
-      resolvers = ["1.1.1.1:53", "1.0.0.1:53"]
+[certificatesResolvers]
+  [certificatesResolvers.cloudflare]
+    [certificatesResolvers.cloudflare.acme]
+      email = "terrerov@gmail.com"
+      storage = "/etc/traefik/acme/acme.json"
+      caServer = "https://acme-v02.api.letsencrypt.org/directory"
+      [certificatesResolvers.cloudflare.acme.dnsChallenge]
+        provider = "cloudflare"
+        resolvers = ["1.1.1.1:53", "1.0.0.1:53"]
+        delayBeforeCheck = 30
+
+[serversTransport]
+insecureSkipVerify = false
+
+[http]
+  [http.middlewares]
+    [http.middlewares.security]
+      [http.middlewares.security.headers]
+        stsSeconds = 31536000
+        stsIncludeSubdomains = true
+        stsPreload = true
+        forceSTSHeader = true
+        contentTypeNosniff = true
+        browserXssFilter = true
+        referrerPolicy = "same-origin"
+        permissionsPolicy = "camera=(), microphone=(), geolocation=(), payment=()"
+        customFrameOptionsValue = "SAMEORIGIN"
