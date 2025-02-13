@@ -1,0 +1,15 @@
+http:
+  routers:
+    terrerov:
+      entryPoints:
+        - websecure
+      rule: "Host(`www.terrerov.com`)"
+      service: terrerov
+      tls:
+        certResolver: cloudflare
+
+  services:
+    terrerov:
+      loadBalancer:
+        servers:
+          - url: "http://nginx:80"

@@ -1,12 +1,10 @@
 # Custom DNS records for terrerov.com
 # Format: <ip-address> <domain>
-# Example: 192.168.1.10 service.terrerov.com
 
-# Point all terrerov.com services to the Docker host
-${HOST_IP} terrerov.com
-${HOST_IP} *.terrerov.com
-${HOST_IP} www.terrerov.com
-${HOST_IP} traefik.terrerov.com
-${HOST_IP} pihole.terrerov.com
-${HOST_IP} db.terrerov.com
-${HOST_IP} monitor.terrerov.com
+192.168.0.3 terrerov.com
+192.168.0.3 *.terrerov.com
+192.168.0.3 www.terrerov.com
+192.168.0.3 traefik.terrerov.com
+192.168.0.3 pihole.terrerov.com
+192.168.0.3 db.terrerov.com
+192.168.0.3 monitor.terrerov.com

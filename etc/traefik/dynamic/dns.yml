@@ -1,0 +1,28 @@
+tcp:
+  routers:
+    dns-tcp:
+      entryPoints:
+        - dnstcp
+      service: dns-service
+      rule: "HostSNI(`*`)"
+      middlewares:
+        - secure-headers
+
+  services:
+    dns-service:
+      loadBalancer:
+        servers:
+          - address: "pihole:53"
+
+udp:
+  routers:
+    dns-udp:
+      entryPoints:
+        - dns
+      service: dns-service
+
+  services:
+    dns-service:
+      loadBalancer:
+        servers:
+          - address: "pihole:53"

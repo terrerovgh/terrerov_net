@@ -23,6 +23,7 @@ level = "INFO"
   [entryPoints.dnstcp]
     address = ":53"
 
+
 [api]
 dashboard = true
 
@@ -40,7 +41,7 @@ dashboard = true
 [certificatesResolvers]
   [certificatesResolvers.cloudflare]
     [certificatesResolvers.cloudflare.acme]
-      email = "terrerov@gmail.com"
+      email = "${EMAIL}"
       storage = "/etc/traefik/acme/acme.json"
       caServer = "https://acme-v02.api.letsencrypt.org/directory"
       [certificatesResolvers.cloudflare.acme.dnsChallenge]

@@ -1,0 +1,24 @@
+[tcp]
+  [tcp.routers]
+    [tcp.routers.dns-tcp]
+      entryPoints = ["dnstcp"]
+      rule = "HostSNI(`*`)"
+      service = "dns-service"
+
+[udp]
+  [udp.routers]
+    [udp.routers.dns-udp]
+      entryPoints = ["dns"]
+      service = "dns-service"
+
+  [udp.services]
+    [udp.services.dns-service]
+      [udp.services.dns-service.loadBalancer]
+        [[udp.services.dns-service.loadBalancer.servers]]
+          address = "${LAN_NETWORK}"
+
+[tcp.services]
+  [tcp.services.dns-service]
+    [tcp.services.dns-service.loadBalancer]
+      [[tcp.services.dns-service.loadBalancer.servers]]
+        address = "${LAN_NETWORK}"

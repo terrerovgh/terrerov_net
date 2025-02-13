@@ -1,5 +1,4 @@
-version: '3.8'
-
+---
 networks:
   terrerov_net:
     driver: bridge
@@ -22,6 +21,8 @@ services:
       terrerov_net:
         ipv4_address: 172.20.0.53
     ports:
+      - "53:53/tcp"
+      - "53:53/udp"
       - "8080:80/tcp"
     environment:
       TZ: 'UTC'
@@ -29,14 +30,18 @@ services:
       DNS1: '1.1.1.1'
       DNS2: '1.0.0.1'
       DNSMASQ_LISTENING: 'all'
-      VIRTUAL_HOST: 'pihole.terrerov.com'
+      INTERFACE: 'eth0'
+      FTLCONF_LOCAL_IPV4: '172.20.0.53'
+      VIRTUAL_HOST: '${PIHOLE_DOMAIN}'
+      PIHOLE_DNS_: '1.1.1.1;1.0.0.1'
+      REV_SERVER: 'false'
     volumes:
       - pihole_config:/etc/pihole
       - pihole_dnsmasq:/etc/dnsmasq.d
       - ./pihole/custom.list:/etc/pihole/custom.list:rw
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.pihole.rule=Host(`pihole.terrerov.com`)"
+      - "traefik.http.routers.pihole.rule=Host(`${PIHOLE_DOMAIN}`)"
       - "traefik.http.routers.pihole.entrypoints=websecure"
       - "traefik.http.routers.pihole.tls.certresolver=cloudflare"
       - "traefik.http.services.pihole.loadbalancer.server.port=80"
@@ -63,7 +68,7 @@ services:
       - EMAIL=${EMAIL}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=Host(`traefik.terrerov.com`)"
+      - "traefik.http.routers.dashboard.rule=Host(`${TRAEFIK_DOMAIN}`)"
       - "traefik.http.routers.dashboard.service=api@internal"
       - "traefik.http.routers.dashboard.entrypoints=websecure"
       - "traefik.http.routers.dashboard.middlewares=auth,secure-headers@file"
@@ -83,9 +88,28 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.nginx.rule=Host(`www.terrerov.com`)"
+      - "traefik.http.routers.nginx.rule=Host(`${NGINX_DOMAIN}`)"
       - "traefik.http.routers.nginx.entrypoints=websecure"
       - "traefik.http.routers.nginx.tls.certresolver=cloudflare"
       - "traefik.http.services.nginx.loadbalancer.server.port=80"
       - "traefik.http.routers.nginx.middlewares=secure-headers@file"
+    restart: unless-stopped
+  netmon:
+    build: ./netmon
+    container_name: netmon
+    networks:
+      - terrerov_net
+    volumes:
+      - ./netmon:/app
+    environment:
+      - TZ=UTC
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.netmon.rule=Host(`monitor.terrerov.com`)"
+      - "traefik.http.routers.netmon.entrypoints=websecure"
+      - "traefik.http.routers.netmon.tls.certresolver=cloudflare"
+      - "traefik.http.services.netmon.loadbalancer.server.port=5000"
+      - "traefik.http.routers.netmon.middlewares=secure-headers@file"
     restart: unless-stopped

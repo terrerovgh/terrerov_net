@@ -1,0 +1,15 @@
+http:
+  routers:
+    netmon:
+      rule: "Host(`monitor.terrerov.com`)"
+      service: netmon
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: cloudflare
+
+  services:
+    netmon:
+      loadBalancer:
+        servers:
+          - url: "http://netmon:5000"

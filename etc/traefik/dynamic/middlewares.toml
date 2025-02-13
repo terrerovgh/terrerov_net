@@ -1,0 +1,25 @@
+[http.middlewares]
+  [http.middlewares.secure-headers.headers]
+    browserXssFilter = true
+    contentTypeNosniff = true
+    frameDeny = true
+    sslRedirect = true
+    stsIncludeSubdomains = true
+    stsPreload = true
+    stsSeconds = 31536000
+    customFrameOptionsValue = "SAMEORIGIN"
+    forceSTSHeader = true
+    referrerPolicy = "strict-origin-when-cross-origin"
+    contentSecurityPolicy = "default-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data:; style-src 'self' 'unsafe-inline';"
+
+  [http.middlewares.compress.compress]
+    excludedContentTypes = ["text/event-stream"]
+
+  [http.middlewares.rate-limit]
+    [http.middlewares.rate-limit.rateLimit]
+      average = 100
+      burst = 50
+
+  [http.middlewares.auth.basicAuth]
+    removeHeader = true
+    headerField = "X-WebAuth-User"

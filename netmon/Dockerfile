@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     gcc \
     python3-dev \
+    jq \
     && rm -rf /var/lib/apt/lists/*
 
 # Set up app directory

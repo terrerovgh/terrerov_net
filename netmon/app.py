@@ -1,5 +1,7 @@
 from flask import Flask, render_template, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from flask_socketio import SocketIO
+from flask_cors import CORS
 from datetime import datetime
 import schedule
 import threading
@@ -14,7 +16,10 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///network_monitor.db'
+app.config['SECRET_KEY'] = os.urandom(24)
+CORS(app, resources={r"/*": {"origins": "*"}})
 db = SQLAlchemy(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Database Models
 class NetworkScan(db.Model):
@@ -46,6 +51,12 @@ def run_nmap_scan(target):
         scan = NetworkScan(scan_type='nmap', target=target, result=result.stdout)
         db.session.add(scan)
         db.session.commit()
+        socketio.emit('new_scan', {
+            'timestamp': scan.timestamp.isoformat(),
+            'scan_type': scan.scan_type,
+            'target': scan.target,
+            'result': scan.result
+        })
     except Exception as e:
         log_error('nmap_scan', str(e))
 
@@ -61,6 +72,13 @@ def run_speed_test():
         )
         db.session.add(test)
         db.session.commit()
+        socketio.emit('new_speed_test', {
+            'timestamp': test.timestamp.isoformat(),
+            'download_speed': test.download_speed,
+            'upload_speed': test.upload_speed,
+            'ping': test.ping,
+            'jitter': test.jitter
+        })
     except Exception as e:
         log_error('speed_test', str(e))
 
@@ -86,6 +104,12 @@ def log_error(error_type, description):
     error = ErrorLog(error_type=error_type, description=description, ai_analysis=ai_analysis)
     db.session.add(error)
     db.session.commit()
+    socketio.emit('new_error', {
+        'timestamp': error.timestamp.isoformat(),
+        'error_type': error.error_type,
+        'description': error.description,
+        'ai_analysis': error.ai_analysis
+    })
 
 # Schedule tasks
 def schedule_tasks():
@@ -101,32 +125,32 @@ def schedule_tasks():
 def index():
     return render_template('index.html')
 
-@app.route('/api/network-scans')
-def get_network_scans():
-    scans = NetworkScan.query.order_by(NetworkScan.timestamp.desc()).limit(10).all()
-    return jsonify([{
-        'timestamp': scan.timestamp,
-        'scan_type': scan.scan_type,
-        'target': scan.target,
-        'result': scan.result
-    } for scan in scans])
-
 @app.route('/api/speed-tests')
 def get_speed_tests():
     tests = SpeedTest.query.order_by(SpeedTest.timestamp.desc()).limit(24).all()
     return jsonify([{
-        'timestamp': test.timestamp,
+        'timestamp': test.timestamp.isoformat(),
         'download_speed': test.download_speed,
         'upload_speed': test.upload_speed,
         'ping': test.ping,
         'jitter': test.jitter
     } for test in tests])
 
-@app.route('/api/errors')
-def get_errors():
+@app.route('/api/network-scans')
+def get_network_scans():
+    scans = NetworkScan.query.order_by(NetworkScan.timestamp.desc()).limit(10).all()
+    return jsonify([{
+        'timestamp': scan.timestamp.isoformat(),
+        'scan_type': scan.scan_type,
+        'target': scan.target,
+        'result': scan.result
+    } for scan in scans])
+
+@app.route('/api/error-logs')
+def get_error_logs():
     errors = ErrorLog.query.order_by(ErrorLog.timestamp.desc()).limit(10).all()
     return jsonify([{
-        'timestamp': error.timestamp,
+        'timestamp': error.timestamp.isoformat(),
         'error_type': error.error_type,
         'description': error.description,
         'ai_analysis': error.ai_analysis
@@ -135,10 +159,5 @@ def get_errors():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    
-    # Start scheduler in a separate thread
-    scheduler_thread = threading.Thread(target=schedule_tasks)
-    scheduler_thread.daemon = True
-    scheduler_thread.start()
-    
-    app.run(host='0.0.0.0', port=8000)
+    threading.Thread(target=schedule_tasks, daemon=True).start()
+    socketio.run(app, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True)

@@ -2,6 +2,7 @@ http:
   middlewares:
     security-headers:
       headers:
+        sslRedirect: false
         stsSeconds: 31536000
         stsIncludeSubdomains: true
         stsPreload: true
