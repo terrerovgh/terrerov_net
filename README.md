@@ -1,6 +1,6 @@
-# terrerov.com Infrastructure
+# Infrastructure
 
-This repository contains the Docker-based infrastructure for terrerov.com, featuring a robust Traefik reverse proxy setup that handles both LAN and internal Docker network traffic.
+This repository contains the Docker-based infrastructure featuring a robust Traefik reverse proxy setup that handles both LAN and internal Docker network traffic.
 
 ## Network Architecture
 ```
@@ -11,12 +11,12 @@ This repository contains the Docker-based infrastructure for terrerov.com, featu
                                         |
                                         v
 [LAN Network] <---------------> [Traefik Proxy] <----+
-192.168.0.0/25                        |             |
+${LAN_NETWORK}                        |             |
                                       |             |
                                       v             |
                           +----------------------+  |
                           |   Docker Network     |  |
-                          |   (172.20.0.0/16)   |  |
+                          |   ${DOCKER_NETWORK}   |  |
                           |                      |  |
                           |  +---------------+   |  |
                           |  |   Website    |   |  |
@@ -45,18 +45,18 @@ This repository contains the Docker-based infrastructure for terrerov.com, featu
   - Rate limiting and compression enabled
 
 - **Services**:
-  - Traefik Dashboard: `https://traefik.terrerov.com`
-  - Website: `https://www.terrerov.com`
-  - Pi-hole: `https://pihole.terrerov.com`
+  - Traefik Dashboard: `https://${TRAEFIK_DOMAIN}`
+  - Website: `https://${WEBSITE_DOMAIN}`
+  - Pi-hole: `https://${PIHOLE_DOMAIN}`
 
 ## Network Configuration
 
-- **LAN Network**: 192.168.0.0/25
+- **LAN Network**: ${LAN_NETWORK}
   - All services are accessible from LAN devices
   - Automatic HTTPS redirection
   - SSL certificates via Cloudflare DNS
 
-- **Docker Network**: terrerov_net (172.20.0.0/16)
+- **Docker Network**: terrerov_net (${DOCKER_NETWORK})
   - Internal container communication
   - Secure service-to-service access
 
@@ -72,7 +72,7 @@ This repository contains the Docker-based infrastructure for terrerov.com, featu
 
 ### From LAN
 1. Connect to the local network (192.168.0.0/25)
-2. Access services using their respective domains (e.g., https://www.terrerov.com)
+2. Access services using their respective domains (e.g., https://${WEBSITE_DOMAIN})
 3. SSL certificates should be automatically validated
 
 ### From Docker Network
