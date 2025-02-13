@@ -55,11 +55,50 @@ Configure the following variables in your `.env` file:
 
 ## Accessing Services
 
-Once deployed, you can access the services at:
+The services can be accessed through both VPN (Twingate) and local network:
+
+### VPN Access (Twingate)
+
+When connected through Twingate VPN, services are automatically accessible at:
 
 - Traefik Dashboard: https://traefik.terrerov.com
 - Web Server: https://www.terrerov.com
 - Database: db.terrerov.com:5432
+
+### Local Network Access
+
+To access services from your local network, you'll need to configure your hosts file. This is the recommended method for local development and testing.
+
+#### Configuring Local Hosts File
+
+1. Locate your hosts file:
+   - **Linux/macOS**: `/etc/hosts`
+   - **Windows**: `C:\Windows\System32\drivers\etc\hosts`
+
+2. Add the following entries (replace `192.168.1.100` with your Docker host's IP address):
+   ```
+   192.168.1.100 terrerov.com
+   192.168.1.100 www.terrerov.com
+   192.168.1.100 traefik.terrerov.com
+   192.168.1.100 db.terrerov.com
+   ```
+
+3. Save the file (you may need administrator/root privileges)
+
+4. Test the configuration:
+   ```bash
+   # Test DNS resolution
+   ping www.terrerov.com
+   
+   # Test HTTPS access
+   curl -k https://www.terrerov.com
+   ```
+
+#### Notes on Local Access
+- The hosts file method requires manual configuration on each client machine
+- This solution is ideal for development and testing environments
+- SSL certificates will show warnings when accessed locally (expected behavior)
+- For production environments, consider using proper DNS configuration
 
 ## Testing the Network
 
@@ -146,10 +185,18 @@ Place your web content in the `nginx/html` directory.
    - Verify bind9 container is running
    - Check bind9 logs for errors
    - Verify DNS records in bind configuration files
+   - For local access, verify hosts file entries are correct
 
 3. **SSL certificate issues**
    - Verify Cloudflare API token is correct
    - Check Traefik logs for certificate errors
+   - For local access, SSL warnings are expected and can be safely ignored
+
+4. **Local network access issues**
+   - Verify your hosts file entries match your Docker host's IP
+   - Ensure your firewall allows traffic to ports 80 and 443
+   - Check if Traefik is properly binding to all network interfaces
+   - Test connectivity using `curl -k` to bypass SSL verification
 
 ### Installation Logs
 
