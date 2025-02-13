@@ -2,6 +2,40 @@
 
 This repository contains the Docker-based infrastructure for terrerov.com, featuring a robust Traefik reverse proxy setup that handles both LAN and internal Docker network traffic.
 
+## Network Architecture
+```
+                                    Internet
+                                        |
+                                        |
+                                   [Cloudflare]
+                                        |
+                                        v
+[LAN Network] <---------------> [Traefik Proxy] <----+
+192.168.0.0/25                        |             |
+                                      |             |
+                                      v             |
+                          +----------------------+  |
+                          |   Docker Network     |  |
+                          |   (172.20.0.0/16)   |  |
+                          |                      |  |
+                          |  +---------------+   |  |
+                          |  |   Website    |   |  |
+                          |  | (Nginx)      |   |  |
+                          |  +---------------+   |  |
+                          |                      |  |
+                          |  +---------------+   |  |
+                          |  |   Pi-hole    |   |  |
+                          |  | DNS Server   |   |  |
+                          |  +---------------+   |  |
+                          |                      |  |
+                          |  +---------------+   |  |
+                          |  |   Traefik    |<--+  |
+                          |  | Dashboard    |      |
+                          |  +---------------+      |
+                          |                         |
+                          +-------------------------+
+```
+
 ## Features
 
 - **Traefik Reverse Proxy**: Configured using best practices from Christian Lempa's boilerplates
